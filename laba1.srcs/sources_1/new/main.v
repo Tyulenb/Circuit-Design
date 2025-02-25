@@ -15,7 +15,7 @@ always @(posedge clk)
 
 wire btn_c_out, btn_c_out_enable;
 
-FILTER #(.size(4)) btn_c_filter (
+FILTER #(.size(16)) btn_c_filter (
     .CLK(clk),
     .CLOCK_ENABLE(CLOCK_ENABLE),
     .IN_SIGNAL(btn_c),
@@ -42,7 +42,7 @@ begin
 end
 
 wire clk_div_out;
-clk_div clk_div1 (
+clk_div #(.size(8192)) clk_div1 (
     .clk(clk),
     .clk_div(clk_div_out)
 );
