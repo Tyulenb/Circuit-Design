@@ -11,7 +11,6 @@ reg btn_prev;
 
 reg [31:0] shift_register;
 reg [7:0] an_mask;
-reg reset;
 
 wire btn_c_out, btn_c_out_enable;
 
@@ -24,7 +23,6 @@ begin
     btn_prev = 0;
     shift_register = 0;
     an_mask <= 8'b11111111;
-    reset = 0;
 end
 
 always #10 clk = ~clk;
@@ -94,7 +92,6 @@ begin
         begin
             shift_register <= {shift_register[27:0], SW};
             an_mask <= {an_mask[6:0], 1'b0};
-            reset <= 1;
        end
 end
 
@@ -104,14 +101,10 @@ clk_div #(.size(16)) clk_div1 (
     .clk_div(clk_div_out)
 );
 
-always@(posedge clk_div_out or negedge clk_div_out)
-begin
-    reset <= 0;
-end
 /*
 SevenSegmentLED seg(
     .clk(clk_div_out),
-    .RESET(reset),
+    .RESET(1'b0),
     .NUMBER(shift_register),
     .AN_MASK(an_mask),
     .AN(AN),
