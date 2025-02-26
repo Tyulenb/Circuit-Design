@@ -11,6 +11,7 @@ reg btn_prev;
 
 reg [31:0] shift_register;
 reg [7:0] an_mask;
+reg reset;
 
 wire btn_c_out, btn_c_out_enable;
 
@@ -18,16 +19,17 @@ initial
 begin
     clk = 0;
     btn = 0;
-    SW = 4'b0111;
+    SW = 4'b0000;
     $srandom(232323);
     btn_prev = 0;
     shift_register = 0;
     an_mask <= 8'b11111111;
+    reset = 0;
 end
 
 always #10 clk = ~clk;
 
-always #3000
+always #10000
 begin 
     btn_prev = btn;
     repeat($urandom_range(50,5))
@@ -39,7 +41,7 @@ begin
 end
 
 
-reg [3:0] counter = 0;
+reg [4:0] counter = 0;
 always @(posedge btn_c_out_enable)
 begin
     case(counter)
@@ -60,10 +62,11 @@ begin
         4'b1110: SW <= 4'b1110;
         4'b1111: SW <= 4'b1111;
     endcase
-    counter <= counter + 4'b1;
-end
+    counter <= counter + 5'b1;
+    if (counter == 5'b10000)
+        $finish;
+end 
 
-/*
 main main1(
     .clk(clk),
     .btn_c(btn),
@@ -71,7 +74,7 @@ main main1(
     .AN(AN),
     .SEG(SEG)
 );
-*/
+
 reg CLOCK_ENABLE = 0;
 
 always @(posedge clk)
@@ -91,6 +94,7 @@ begin
         begin
             shift_register <= {shift_register[27:0], SW};
             an_mask <= {an_mask[6:0], 1'b0};
+            reset <= 1;
        end
 end
 
@@ -99,15 +103,20 @@ clk_div #(.size(16)) clk_div1 (
     .clk(clk),
     .clk_div(clk_div_out)
 );
-    
+
+always@(posedge clk_div_out or negedge clk_div_out)
+begin
+    reset <= 0;
+end
+/*
 SevenSegmentLED seg(
     .clk(clk_div_out),
-    .RESET(1'b0),
+    .RESET(reset),
     .NUMBER(shift_register),
     .AN_MASK(an_mask),
     .AN(AN),
     .SEG(SEG)
 ); 
-
+*/
 
 endmodule
