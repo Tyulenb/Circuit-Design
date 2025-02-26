@@ -9,13 +9,14 @@ module main(
 );
 
 reg CLOCK_ENABLE = 0;
+reg reset = 0;
 
 always @(posedge clk)
     CLOCK_ENABLE <= ~CLOCK_ENABLE;
 
 wire btn_c_out, btn_c_out_enable;
 
-FILTER #(.size(16)) btn_c_filter (
+    FILTER #(.size(16)) btn_c_filter (
     .CLK(clk),
     .CLOCK_ENABLE(CLOCK_ENABLE),
     .IN_SIGNAL(btn_c),
@@ -38,18 +39,24 @@ begin
         begin
             shift_register <= {shift_register[27:0], SW};
             an_mask <= {an_mask[6:0], 1'b0};
+            reset <= 1;
        end
 end
 
 wire clk_div_out;
-clk_div #(.size(8192)) clk_div1 (
+    clk_div #(.size(8192)) clk_div1 (
     .clk(clk),
     .clk_div(clk_div_out)
 );
     
+always@(posedge clk_div_out or negedge clk_div_out)
+begin
+    reset <= 0;
+end
+    
 SevenSegmentLED seg(
     .clk(clk_div_out),
-    .RESET(1'b0),
+    .RESET(reset),
     .NUMBER(shift_register),
     .AN_MASK(an_mask),
     .AN(AN),
