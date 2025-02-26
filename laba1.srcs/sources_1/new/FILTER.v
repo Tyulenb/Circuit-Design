@@ -15,7 +15,7 @@ module FILTER #(size = 3) (
     begin
         IN_SIGNAL_SYNC <= {IN_SIGNAL_SYNC[0], IN_SIGNAL};
         counter <= (IN_SIGNAL_SYNC[1] ~^ OUT_SIGNAL) ? {size{1'd0}} : (CLOCK_ENABLE ? counter + 1 : counter);
-        if (&(counter) & CLOCK_ENABLE) //&(counter) - побитовое и всех разрядов counter
+        if (&(counter) & CLOCK_ENABLE) //&(counter) - РїРѕР±РёС‚РѕРІРѕРµ Рё РІСЃРµС… СЂР°Р·СЂСЏРґРѕРІ counter
             OUT_SIGNAL <= IN_SIGNAL_SYNC[1];
         OUT_SIGNAL_ENABLE <= &(counter) & CLOCK_ENABLE & IN_SIGNAL_SYNC[1];
     end
