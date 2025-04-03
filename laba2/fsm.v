@@ -29,7 +29,7 @@ module fsm(
         reg_b = 0;
         step_1 = 0;
         step_2 = 0;
-        counter = 0;
+        counter = 32'b00111111100000000000000000000000;
         r_o = 0;
         iter = 0;
     end
@@ -84,7 +84,7 @@ module fsm(
                         if (lst == 0 && reg_b[iter])
                             lst = iter;
                     end
-                    if((reg_b[30:23] > 7'b1111111) ? (22-(reg_b[30:23]-7'b1111111)) >= lst : 1)
+                    if((reg_b[30:23] > 7'b1111111) ? ((22-(reg_b[30:23]-7'b1111111)) >= lst && lst != 0) : 1)
                     begin
                         err <= 2'b01;
                         state <= 4'b0000;
@@ -93,34 +93,31 @@ module fsm(
                         state <= 4'b0101;
                 end
                 4'b0101: //counter
-                begin
-                    if (counter[30:23]>reg_b[30:23] ? 1 : (counter[30:23]==reg_b[30:23] ? counter[22:0]>reg_b[22:0] : 0))
-                        state <= 4'b0000;
-                    else
-                    begin: count //addition 1
-                        reg [31:0] mx;
-                        reg [31:0] mn;
-                        reg [24:0] mant;
-                        reg [22:0] mant_res;
-                        reg [4:0] carry;
-                        reg [31:0] one;
+                begin: count //addition 1
+                    reg [31:0] mx;
+                    reg [31:0] mn;
+                    reg [24:0] mant;
+                    reg [22:0] mant_res;
+                    reg [4:0] carry;
+                    reg [31:0] one;
                         
-                        one = 32'b00111111100000000000000000000000;
-                        mx = (counter[30:23] > one[30:23]) ? one : (((counter[30:23] == one[30:23])) ? (counter[22:0] > one[22:0] ? counter : one) : one ); 
-                        mn = (counter == mx) ? one : counter;
+                    one = 32'b00111111100000000000000000000000;
+                    mx = (counter[30:23] > one[30:23]) ? counter : (((counter[30:23] == one[30:23])) ? (counter[22:0] > one[22:0] ? counter : one) : one ); 
+                    mn = (counter == mx) ? one : counter;
                         
-                        mant = (mx[31]^mn[31]) ? {1'b1, mx[22:0]} - ({1'b1, mn[22:0]} >> (mx[30:23]-mn[30:23])): {1'b1, mx[22:0]}+({1'b1, mn[22:0]} >> (mx[30:23]-mn[30:23]));
+                    mant = (mx[31]^mn[31]) ? {1'b1, mx[22:0]} - ({1'b1, mn[22:0]} >> (mx[30:23]-mn[30:23])) : {1'b1, mx[22:0]}+({1'b1, mn[22:0]} >> (mx[30:23]-mn[30:23]));
                         
-                        for(iter = 0; iter <= 24; iter = iter + 1)
-                        begin
-                            if(mant[iter])
-                                carry = iter;
-                        end
-                        
-                        mant_res = mant[24] ? (mant >> 1) : (mant << (23-carry)); 
-                        counter = mx[31] ? {1'b1, mx[30:23]+(carry-5'b10111), mant_res} : {1'b0, mx[30:23]+(carry-5'b10111), mant_res};
-                        state <= 4'b0110;
+                    for(iter = 0; iter <= 24; iter = iter + 1)
+                    begin
+                        if(mant[iter])
+                            carry = iter;
                     end
+                        
+                    mant_res = mant[24] ? (mant >> 1) : (mant << (23-carry)); 
+                    counter = mx[31] ? {1'b1, mx[30:23]+(carry-5'b10111), mant_res} : {1'b0, mx[30:23]+(carry-5'b10111), mant_res};
+                    state <= 4'b0110;
+                    if (counter[30:23]>=reg_b[30:23] ? 1 : (counter[30:23]==reg_b[30:23] ? counter[22:0]>=reg_b[22:0] : 0))
+                        state <= 4'b0000;
                 end
                 4'b0110: //power of 2
                 begin: step1
@@ -223,6 +220,7 @@ module fsm(
     begin
         case(state)
             4'b0000: r_o <= 0;
+            4'b0011: r_o <= 1;
             4'b0101: r_o <= 0;
             4'b1010: r_o <= 1;
         endcase
