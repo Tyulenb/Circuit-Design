@@ -14,9 +14,11 @@ module checkfr_fsm(
     reg [1:0] state;
     initial
     begin
+        state = 0;
         lst = 0;
         iter = 0;
         res_rg = 0;
+        r_o = 0;
     end
     
     always@(posedge clk)
@@ -24,26 +26,33 @@ module checkfr_fsm(
         case(state)
         2'b00: if(r_i)
             begin
+                r_o <= 0;
+                lst <= 0;
+                iter <= 0;
+                res_rg <= 0;
+                state <= 2'b01;
+            end
+        2'b01:
+            begin
                 for(iter = 0; iter <= 22; iter = iter + 1)
                 begin
                     if (lst == 0 && num[iter])
                         lst = iter;
                 end
-                state <= 2'b01;
-            end
-        2'b01:
-            begin
-                if (num[30:23] > 7'b1111111)
-                begin
-                    if ((22-(num[30:23]-7'b1111111)) >= lst)
-                        res_rg = 0;
-                    else
-                        res_rg = 1;
-                end
                 state <= 2'b10;
             end
         2'b10:
-            state <= 2'b00;
+            begin
+                if (num[30:23] > 7'b1111111)
+                begin
+                   res_rg = (22-(num[30:23]-7'b1111111)) >= lst;
+                end
+                else
+                begin
+                    res_rg = 1;
+                end
+                state <= 2'b00;
+            end
         endcase
     end
     

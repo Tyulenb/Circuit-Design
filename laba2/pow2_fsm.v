@@ -67,8 +67,8 @@ module pow2_fsm(
         
         3'b100:
         begin
-            over = x[30] ? exp < exp_in : exp > exp_in; // if x[30] is 1 -> decimal -> exp_1 < x[30:23] -> overflow
-            res_reg = over ? 0 : {1'b0, exp[7:0], mant_res};
+            res_reg = {1'b0, exp[7:0], mant_res};
+            over = x[30] ? x > res_reg : x < res_reg;
             state <= 3'b000;
         end
         

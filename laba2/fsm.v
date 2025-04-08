@@ -10,28 +10,66 @@ module fsm(
     output [31:0] dataOut
     );
     
+    //main
     reg [3:0] state;
     reg [31:0] reg_a;
     reg [31:0] reg_b;
-    reg [31:0] step_1;
-    reg [31:0] step_2;
     reg [31:0] counter;
-    reg [4:0] iter;
+    reg [31:0] step1;
+    reg [31:0] step2;
+
+    //fraction_check
+    reg fr_i;
+    reg fr_flag;
+    wire fr_o;
+    wire fr_res;
     
-    //reg for division
-    reg [23:0] mant_res = 0;
-    reg [24:0] reminder = 0;
+    //increment
+    reg incr_i;
+    reg incr_flag;
+    wire incr_o;
+    wire [31:0] inc_res;
+    
+    //sum
+    reg sm_ri;
+    reg sm_flag;
+    wire sm_ro;
+    wire [31:0] sm_res;
+    
+    //del
+    reg dl_ri;
+    reg dl_flag;
+    wire dl_ro;
+    wire [31:0] dl_res;
+    
+    //pow
+    reg pw_ri;
+    reg pw_flag;
+    wire pw_ro;
+    wire pw_err;
+    wire [31:0] pw_res;
     
     initial
     begin
+        err = 0;
         state = 0;
         reg_a = 0;
         reg_b = 0;
-        step_1 = 0;
-        step_2 = 0;
         counter = 32'b00111111100000000000000000000000;
         r_o = 0;
-        iter = 0;
+        step1 = 0;
+        step2 = 0;
+        
+        fr_i = 0;
+        fr_flag = 1;
+        incr_i = 0;
+        incr_flag = 1;
+        sm_ri = 0;
+        sm_flag = 1;
+        dl_ri = 0;
+        dl_flag = 1;
+        pw_ri = 0;
+        pw_flag = 1;
     end
     
     always@(posedge clk)
@@ -76,141 +114,128 @@ module fsm(
                     state <= 4'b1100;
                 end
                 4'b1100: //fraction check
-                begin: fract
-                    reg [4:0] lst;
-                    lst = 0;
-                    for(iter = 0; iter <= 22; iter = iter + 1)
-                    begin
-                        if (lst == 0 && reg_b[iter])
-                            lst = iter;
-                    end
-                    if((reg_b[30:23] > 7'b1111111) ? ((22-(reg_b[30:23]-7'b1111111)) >= lst && lst != 0) : 1)
-                    begin
-                        err <= 2'b01;
-                        state <= 4'b0000;
-                    end
-                    else
-                        state <= 4'b0101;
-                end
-                4'b0101: //counter
-                begin: count //addition 1
-                    reg [31:0] mx;
-                    reg [31:0] mn;
-                    reg [24:0] mant;
-                    reg [22:0] mant_res;
-                    reg [4:0] carry;
-                    reg [31:0] one;
-                        
-                    one = 32'b00111111100000000000000000000000;
-                    mx = (counter[30:23] > one[30:23]) ? counter : (((counter[30:23] == one[30:23])) ? (counter[22:0] > one[22:0] ? counter : one) : one ); 
-                    mn = (counter == mx) ? one : counter;
-                        
-                    mant = (mx[31]^mn[31]) ? {1'b1, mx[22:0]} - ({1'b1, mn[22:0]} >> (mx[30:23]-mn[30:23])) : {1'b1, mx[22:0]}+({1'b1, mn[22:0]} >> (mx[30:23]-mn[30:23]));
-                        
-                    for(iter = 0; iter <= 24; iter = iter + 1)
-                    begin
-                        if(mant[iter])
-                            carry = iter;
-                    end
-                        
-                    mant_res = mant[24] ? (mant >> 1) : (mant << (23-carry)); 
-                    counter = mx[31] ? {1'b1, mx[30:23]+(carry-5'b10111), mant_res} : {1'b0, mx[30:23]+(carry-5'b10111), mant_res};
-                    state <= 4'b0110;
-                    if (counter[30:23]>=reg_b[30:23] ? 1 : (counter[30:23]==reg_b[30:23] ? counter[22:0]>=reg_b[22:0] : 0))
-                        state <= 4'b0000;
-                end
-                4'b0110: //power of 2
-                begin: step1
-                    reg [8:0] exp;
-                    reg [47:0] mant;
-                    reg [22:0] mant_res;
-                    reg over;
-                    mant = {1'b1,reg_a[22:0]}*{1'b1,reg_a[22:0]};
-                    mant_res = mant[47] ? mant[46:24] : mant[45:23]; //10.1101 -> 1.01101; 01.1101 -> 1.1101
-                    exp = {1'b0,reg_a[30:23]}+{1'b0,reg_a[30:23]}-9'b001111111+mant[47];
-                    over = reg_a[30] ? exp < reg_a[30:23] : exp > reg_a[30:23]; // if x[30] is 1 -> decimal -> exp_1 < x[30:23] -> overflow
-                    step_1 = over ? 0 : {1'b0, exp[7:0], mant_res};
-                    if (over)
-                    begin
-                        err <= 2'b10;
-                        state <= 4'b0000;
-                    end    
-                    else
-                        state <= 4'b0111;
-                end
-                4'b0111: //step2
                 begin
-                    //dividing step_2 <= result;
-                    mant_res <= {1'b1, reg_b[22:0]}/{1'b1, reg_a[22:0]};
-                    reminder <= ({1'b1, reg_b[22:0]}%{1'b1, reg_a[22:0]}) << 1;
-                    iter <= 0;
-                    state <= 4'b1000;
-                end
-                4'b1000: //step2
-                begin
-                    if(!mant_res[23])
+                    if(fr_o)
                     begin
-                        if(reminder < {1'b1, reg_a[22:0]})
+                        if(fr_res)
                         begin
-                            mant_res <= mant_res << 1;
-                            reminder <= reminder << 1;
+                            err <= 2'b10;
+                            reg_a <= 0;
+                            state <= 4'b1110;
                         end
                         else
                         begin
-                            mant_res = (mant_res << 1) + reminder/{1'b1, reg_a[22:0]};
-                            reminder = (reminder - {1'b1, reg_a[22:0]}) << 1;
+                            fr_flag <= 1;
+                            state <= 4'b1101;
                         end
                     end
-                    if(iter < 22)
-                        iter <= iter + 1;
-                    else
-                        state <= 4'b1001;
-                end
-                4'b1001: //step2
-                begin: step2
-                    reg [4:0] carry;
-                    reg [8:0] exp;
-                    for(iter = 0; iter <= 23; iter = iter + 1)
+                    
+                    if(fr_flag)
                     begin
-                        if(mant_res[iter])
-                            carry = iter;
+                        fr_i = 1;
+                        fr_flag = 0;
                     end
-                    mant_res = mant_res << (23 - carry);
-                    exp = {1'b0,reg_b[30:23]}+7'b1111111-{1'b0,reg_a[30:23]};
-                    step_2 = {reg_a[31]^reg_b[31], exp[7:0]-23+carry, mant_res[22:0]};
-                    state <= 4'b1010;
+                    else
+                        fr_i = 0;
+                        
+                end
+                4'b1101:
+                begin
+                    state <= 4'b0101;
+                end
+                4'b0101: //counter
+                begin
+                    if(incr_o)
+                    begin
+                        counter = inc_res;
+                        if (counter[30:23]>reg_b[30:23] ? 1 : (counter[30:23]==reg_b[30:23] ? counter[22:0]>=reg_b[22:0] : 0))
+                        begin
+                            state <= 4'b0000;
+                        end
+                        else
+                        begin
+                            incr_flag <= 1;
+                            state <= 4'b0110;
+                        end
+                    end
+                    
+                    if(incr_flag)
+                    begin
+                        incr_i = 1;
+                        incr_flag = 0;
+                    end
+                    else
+                        incr_i = 0;
+                        
+                end
+                4'b0110: //power of 2
+                begin
+                    //$display(reg_a);
+                    if(pw_ro)
+                    begin
+                        if (pw_err)
+                        begin
+                            err <= 2'b01;
+                            reg_a <= 0;
+                            state <= 4'b1110;
+                        end
+                        else
+                        begin
+                            pw_flag <= 1;
+                            step1 <= pw_res;
+                            state <= 4'b0111;
+                        end
+                    end
+                    
+                    if(pw_flag)
+                    begin
+                        pw_ri = 1;
+                        pw_flag = 0;
+                    end
+                    else
+                        pw_ri = 0;
+                        
+                end
+                4'b0111: //step2
+                begin
+                    if(dl_ro)
+                    begin
+                        dl_flag <= 1;
+                        step2 <= dl_res;
+                        state <= 4'b1010;
+                    end
+                    
+                    if(dl_flag)
+                    begin
+                        dl_ri = 1;
+                        dl_flag = 0;
+                    end
+                    else
+                        dl_ri = 0;
+                        
                 end
                 4'b1010: //step3
-                begin: res
+                begin
                     //result     
-                    reg [31:0] mx;
-                    reg [31:0] mn;
-                    reg [24:0] mant;
-                    reg [22:0] mant_res;
-                    reg [4:0] carry;
-                    
-                    mx = (step_1[30:23] > step_2[30:23]) ? step_1 : (((step_1[30:23] == step_2[30:23])) ? (step_1[22:0] > step_2[22:0] ? step_1 : step_2) : step_2 ); 
-                    mn = (step_1 == mx) ? step_2 : step_1;
-                    
-                    mant = (mx[31]^mn[31]) ? {1'b1, mx[22:0]} - ({1'b1, mn[22:0]} >> (mx[30:23]-mn[30:23])): {1'b1, mx[22:0]}+({1'b1, mn[22:0]} >> (mx[30:23]-mn[30:23]));
-                    
-
-                    for(iter = 0; iter <= 24; iter = iter + 1)
+                    if(sm_ro)
                     begin
-                        if(mant[iter])
-                            carry = iter;
+                        sm_flag <= 1;
+                        reg_a <= sm_res;
+                        state <= 4'b1110;
                     end
-                    mant_res = mant[24] ? (mant >> 1) : (mant << (23-carry)); 
-                    reg_a = mx[31] ? {1'b1, mx[30:23]+(carry-5'b10111), mant_res} : {1'b0, mx[30:23]+(carry-5'b10111), mant_res};
-                    state <= 4'b1011;
+                    
+                    if(sm_flag)
+                    begin
+                        sm_ri = 1;
+                        sm_flag = 0;
+                    end
+                    else
+                        sm_ri = 0;
                     
                 end
-                4'b1011:
+                4'b1110: //r_o condition
                 begin
-                    if (err == 0)
-                        state <= 4'b0101;
-                    else
-                        state <= 4'b0000;
+                    state <= 4'b0101;
                 end
             endcase 
         end
@@ -220,12 +245,55 @@ module fsm(
     begin
         case(state)
             4'b0000: r_o <= 0;
-            4'b0011: r_o <= 1;
             4'b0101: r_o <= 0;
-            4'b1010: r_o <= 1;
+            4'b1110: r_o <= 1;
         endcase
     end
     
     assign dataOut = reg_a;
+    
+    checkfr_fsm FSM_FR(
+        .clk(clk),
+        .r_i(fr_i),
+        .num(reg_b),
+        .res(fr_res),
+        .r_o(fr_o)
+    );
+    
+    sum_fsm INCR(
+        .clk(clk),
+        .r_i(incr_i),
+        .r_o(incr_o),
+        .a(counter),
+        .b(32'b00111111100000000000000000000000),
+        .res(inc_res)
+    );
+    
+    sum_fsm SM(
+        .clk(clk),
+        .r_i(sm_ri),
+        .r_o(sm_ro),
+        .a(step1),
+        .b(step2),
+        .res(sm_res)
+    );
+    
+    pow2_fsm PW(
+        .clk(clk),
+        .r_i(pw_ri),
+        .r_o(pw_ro),
+        .x(reg_a),
+        .err(pw_err),
+        .res(pw_res)
+    );
+    
+    del_fsm DL(
+        .clk(clk),
+        .r_i(dl_ri),
+        .r_o(dl_ro),
+        .n(reg_b),
+        .x(reg_a),
+        .res(dl_res)
+    );
     
 endmodule
