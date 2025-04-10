@@ -2,7 +2,7 @@
 
 
 module checkfr_fsm(
-    input [31:0] num,
+    input [31:0] num_in,
     input clk, r_i,
     output res,
     output reg r_o
@@ -12,6 +12,7 @@ module checkfr_fsm(
     reg [4:0] iter;
     reg res_rg;
     reg [1:0] state;
+    reg [31:0] num;
     initial
     begin
         state = 0;
@@ -26,10 +27,10 @@ module checkfr_fsm(
         case(state)
         2'b00: if(r_i)
             begin
-                r_o <= 0;
                 lst <= 0;
                 iter <= 0;
                 res_rg <= 0;
+                num <= num_in;
                 state <= 2'b01;
             end
         2'b01:
@@ -38,6 +39,8 @@ module checkfr_fsm(
                 begin
                     if (lst == 0 && num[iter])
                         lst = iter;
+                    else
+                        lst = lst;
                 end
                 state <= 2'b10;
             end
@@ -45,7 +48,7 @@ module checkfr_fsm(
             begin
                 if (num[30:23] > 7'b1111111)
                 begin
-                   res_rg = (22-(num[30:23]-7'b1111111)) >= lst;
+                   res_rg = (22-(num[30:23]-7'b1111111)) >= lst && lst!=0;
                 end
                 else
                 begin
@@ -53,15 +56,17 @@ module checkfr_fsm(
                 end
                 state <= 2'b00;
             end
+        default:
+            state <= 2'b00;
         endcase
     end
     
     always@(posedge clk)
     begin
         if(state == 2'b10)
-            r_o = 1;
+            r_o <= 1;
         else
-            r_o = 0;
+            r_o <= 0;
     end
     
     assign res = res_rg;

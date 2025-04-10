@@ -75,7 +75,10 @@ module fsm(
     always@(posedge clk)
     begin
         if(reset)
+        begin
             state <= 0;
+            //err <= 0;
+        end
         else
         begin
             case(state)
@@ -129,15 +132,16 @@ module fsm(
                             state <= 4'b1101;
                         end
                     end
-                    
-                    if(fr_flag)
-                    begin
-                        fr_i = 1;
-                        fr_flag = 0;
-                    end
                     else
-                        fr_i = 0;
-                        
+                    begin
+                        if(fr_flag)
+                        begin
+                            fr_i = 1;
+                            fr_flag = 0;
+                        end
+                        else
+                            fr_i = 0;
+                   end
                 end
                 4'b1101:
                 begin
@@ -186,14 +190,16 @@ module fsm(
                             state <= 4'b0111;
                         end
                     end
-                    
-                    if(pw_flag)
-                    begin
-                        pw_ri = 1;
-                        pw_flag = 0;
-                    end
                     else
-                        pw_ri = 0;
+                    begin
+                        if(pw_flag)
+                        begin
+                            pw_ri = 1;
+                            pw_flag = 0;
+                        end
+                        else
+                            pw_ri = 0;
+                    end
                         
                 end
                 4'b0111: //step2
@@ -204,15 +210,16 @@ module fsm(
                         step2 <= dl_res;
                         state <= 4'b1010;
                     end
-                    
-                    if(dl_flag)
-                    begin
-                        dl_ri = 1;
-                        dl_flag = 0;
-                    end
                     else
-                        dl_ri = 0;
-                        
+                    begin
+                        if(dl_flag)
+                        begin
+                            dl_ri = 1;
+                            dl_flag = 0;
+                        end
+                        else
+                            dl_ri = 0;
+                   end
                 end
                 4'b1010: //step3
                 begin
@@ -223,14 +230,16 @@ module fsm(
                         reg_a <= sm_res;
                         state <= 4'b1110;
                     end
-                    
-                    if(sm_flag)
-                    begin
-                        sm_ri = 1;
-                        sm_flag = 0;
-                    end
                     else
-                        sm_ri = 0;
+                    begin
+                        if(sm_flag)
+                        begin
+                            sm_ri = 1;
+                            sm_flag = 0;
+                        end
+                        else
+                            sm_ri = 0;
+                    end
                     
                 end
                 4'b1110: //r_o condition
@@ -247,15 +256,16 @@ module fsm(
             4'b0000: r_o <= 0;
             4'b0101: r_o <= 0;
             4'b1110: r_o <= 1;
+            4'b1101: r_o <= 1;
         endcase
     end
     
     assign dataOut = reg_a;
     
-    checkfr_fsm FSM_FR(
+    checkfr_fsm FR(
         .clk(clk),
         .r_i(fr_i),
-        .num(reg_b),
+        .num_in(reg_b),
         .res(fr_res),
         .r_o(fr_o)
     );

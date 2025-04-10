@@ -16,7 +16,7 @@ module del_fsm(
     reg [7:0] divd_exp;
     reg divd_fb;
     reg divs_fb;
-    reg [2:0] state = 0;
+    reg [3:0] state = 0;
     
     reg [4:0] iter = 0;
     
@@ -43,7 +43,7 @@ module del_fsm(
     always@(posedge clk)
     begin
         case(state)
-            3'b000:
+            4'b0000:
             begin
                 divisible <= 0;
                 divider <= 0;
@@ -55,9 +55,9 @@ module del_fsm(
                 mant_res <= 0;
                 reminder <= 0;
                 carry = 0;
-                state <= 3'b001;
+                state <= 4'b0001;
             end
-            3'b001: if(r_i)
+            4'b0001: if(r_i)
             begin
                 divisible <= {1'b1, n[22:0]};
                 divider <= {1'b1, x[22:0]};
@@ -65,52 +65,104 @@ module del_fsm(
                 divd_exp <= x[30:23];
                 divd_fb <= n[31];
                 divs_fb <= x[31];
-                state <= 4'b010;
+                state <= 4'b0010;
             end
-            3'b010:
+            4'b0010:
             begin
                 mant_res <= divisible/divider;
-                reminder <= (divisible%divider) << 1; 
-                state <= 3'b011;
+                state <= 4'b0011;
             end
-            3'b011:
+            4'b0011:
+            begin
+                reminder <= (divisible%divider); 
+                state <= 4'b0100;
+            end
+            4'b0100:
+            begin
+                reminder <= reminder << 1;
+                state <= 4'b0101;
+            end
+            4'b0101:
             begin
                 if(!mant_res[23])
-                begin
-                    if(reminder < divider)
-                    begin
-                        mant_res <= mant_res << 1;
-                        reminder <= reminder << 1;
-                    end
-                    else
-                    begin
-                        mant_res = (mant_res << 1) + reminder/divider;
-                        reminder = (reminder - divider) << 1;
-                    end
-                end
-                if(iter < 22)
-                    iter <= iter + 1;
+                    state <= 4'b0110;
                 else
-                    state <= 3'b100;
+                    state <= 4'b1010; //normalizing step
             end
-            3'b100:
+            4'b0110:
             begin
-                for(iter = 0; iter <= 23; iter = iter + 1)
+                if(reminder < divider)
                 begin
-                    if(mant_res[iter])
-                        carry = iter;
+                    mant_res <= mant_res << 1;
+                    reminder <= reminder << 1;
+                    state <= 4'b1001;
                 end
-                mant_res = mant_res << (23 - carry);
-                state <= 3'b101;
+                else
+                    state <= 4'b0111;
             end
-            3'b101:
-                state <= 3'b000;
+            4'b0111:
+            begin
+                mant_res <= (mant_res << 1) + reminder/divider;
+                state <= 4'b1000;
+            end
+            4'b1000:
+            begin
+                reminder <= (reminder - divider) << 1;
+                state <= 4'b1001;
+            end
+            4'b1001:
+            begin
+                if(iter < 22)
+                begin
+                    iter <= iter + 1;
+                    state <= 4'b0101;
+                end
+                else
+                begin
+                    state <= 4'b1010;
+                    iter <= 0;
+                end
+            end
+            4'b1010: //normalizing
+            begin
+                if(iter <= 23)
+                    state <= 4'b1011;
+                else
+                    state <= 4'b1100;
+            end
+            4'b1011:
+            begin
+                if(mant_res[iter])
+                begin
+                    carry <= iter;
+                    state <= 4'b1101;
+                end
+                else
+                    state <= 4'b1101;
+            end
+            4'b1101:
+            begin
+                iter <= iter + 1;
+                state <= 4'b1010;
+            end
+            4'b1100:
+            begin
+                mant_res <= mant_res << (23 - carry);
+                state <= 4'b1110;
+            end
+            
+            4'b1110:
+            begin
+                state <= 4'b0000;
+            end
+            default:
+                state <= 4'b0000;
         endcase
     end
     
     always@(posedge clk)
     begin
-        if(state == 4'b0101)
+        if(state == 4'b1110)
             r_o = 1;
         else
             r_o = 0;

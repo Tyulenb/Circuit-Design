@@ -71,7 +71,8 @@ module pow2_fsm(
             over = x[30] ? x > res_reg : x < res_reg;
             state <= 3'b000;
         end
-        
+        default:
+            state <= 3'b000;
         endcase
     end
     

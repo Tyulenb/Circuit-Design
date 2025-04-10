@@ -6,7 +6,7 @@ module main(
     input btn_in,
     input btn_nxt,
     input btn_rst,
-    output [1:0] err,
+    output reg [1:0] err_out,
     output [7:0] AN,
     output [6:0] SEG
     );
@@ -18,7 +18,7 @@ always @(posedge clk)
 
 wire btn_in_out, btn_in_out_enable;
 
-FILTER #(.size(2)) btn_in_filter (
+FILTER #(.size(16)) btn_in_filter (
     .CLK(clk),
     .CLOCK_ENABLE(1'b1),
     .IN_SIGNAL(btn_in),
@@ -28,7 +28,7 @@ FILTER #(.size(2)) btn_in_filter (
     
 wire btn_nxt_out, btn_nxt_out_enable;
 
-FILTER #(.size(2)) btn_nxt_filter (
+FILTER #(.size(16)) btn_nxt_filter (
     .CLK(clk),
     .CLOCK_ENABLE(1'b1),
     .IN_SIGNAL(btn_nxt),
@@ -38,7 +38,7 @@ FILTER #(.size(2)) btn_nxt_filter (
     
 wire btn_rst_out, btn_rst_out_enable;
 
-FILTER #(.size(2)) btn_rst_filter (
+FILTER #(.size(16)) btn_rst_filter (
     .CLK(clk),
     .CLOCK_ENABLE(1'b1),
     .IN_SIGNAL(btn_rst),
@@ -50,11 +50,10 @@ reg [3:0] num_of_elem_in;
 reg [3:0] num_of_elem_out;
 reg [3:0] iter;
 reg [31:0] sequence [9:0];
-reg rst;
 
 initial 
 begin
-    rst = 0;
+    err_out = 0;
     num_of_elem_in = 0;
     num_of_elem_out = 0;
     for (iter = 0; iter <= 9; iter = iter+1)
@@ -65,6 +64,7 @@ end
 
 wire r_o;
 wire [31:0] data_out;
+wire err;
 fsm FSM(
     .dataIn(data_in),
     .R_I(btn_in_out_enable),
@@ -76,33 +76,42 @@ fsm FSM(
 );
 
 
-always@(posedge r_o)
+always@(posedge clk)
 begin
-    if(rst)
+    if(btn_nxt_out_enable)
     begin
-        num_of_elem_in = 0;
-        num_of_elem_out = 0;
-        rst = 0;
+        //$display(sequence);
+        if(sequence[num_of_elem_out] == 0)
+            num_of_elem_out <= 0;
+        else
+            num_of_elem_out <= num_of_elem_out+1'b1;
     end
-    sequence[num_of_elem_in] <= data_out;
-    num_of_elem_in <= num_of_elem_in + 1;
-end
-
-
-always@(posedge btn_rst_out_enable)
-begin
-    rst = 1;
-end
-
-always@(posedge btn_nxt_out_enable)
-begin
-    num_of_elem_out = num_of_elem_out + 1'b1;
-    if(sequence[num_of_elem_out] == 0)
-        num_of_elem_out = 0;
+    
+    if(r_o)
+    begin
+        if(err==0)
+        begin
+            sequence[num_of_elem_in] <= data_out;
+            num_of_elem_in <= num_of_elem_in + 1'b1;
+        end
+        else
+        begin
+            err_out <= err;
+            num_of_elem_in <= num_of_elem_in;
+        end
+    end
+    
+    if(btn_rst_out_enable || btn_in_out_enable)
+    begin
+        err_out <= 0;
+        num_of_elem_in <= 0;
+        num_of_elem_out <= 0;
+    end
+    
 end
 
 wire clk_div_out;
-clk_div #(.size(3)) clk_div1 (
+clk_div #(.size(8192)) clk_div1 (
     .clk(clk),
     .clk_div(clk_div_out)
 );

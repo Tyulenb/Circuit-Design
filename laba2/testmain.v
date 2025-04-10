@@ -19,7 +19,7 @@ begin
     $srandom(232323); 
     //input
     #100;
-    data_in = 16'b0100000110001000;
+    data_in = 16'b0100000010100000; //16'b0100000110001000;
     btn_in = 1;
     #200;
     btn_in = 0;
@@ -29,7 +29,7 @@ begin
     #200;
     btn_in = 0;
     #100;
-    data_in = 16'b0100000010000000;
+    data_in = 16'b0100000011100000; //16'b0100000010000000;
     btn_in = 1;
     #200;
     btn_in = 0;
@@ -135,7 +135,7 @@ main MAIN(
     .btn_in(btn_in),
     .btn_nxt(btn_nxt),
     .btn_rst(btn_rst),
-    .err(err),
+    .err_out(err),
     .AN(AN),
     .SEG(SEG)
 );

@@ -45,7 +45,6 @@ module sum_fsm(
                 carry <= 0;
                 iter <= 0;
                 res_reg <= 0;
-                r_o <= 0;
             end
             3'b001: if(r_i)
             begin
@@ -64,6 +63,8 @@ module sum_fsm(
                 begin
                     if(mant[iter])
                         carry = iter;
+                    else
+                        carry = carry;
                 end
                 state <= 3'b100;
             end
@@ -82,6 +83,9 @@ module sum_fsm(
                 res_reg <= mx[31] ? {1'b1, exp[7:0], mant_res} : {1'b0, exp[7:0], mant_res};
                 state <= 3'b000;
             end
+            default:
+                state <= 3'b000;
+                
         endcase
     end
     
