@@ -81,8 +81,10 @@ module sum_fsm(
             3'b110:
             begin
                 res_reg <= mx[31] ? {1'b1, exp[7:0], mant_res} : {1'b0, exp[7:0], mant_res};
-                state <= 3'b000;
+                state <= 3'b111;
             end
+            3'b111:
+                state <= 3'b000;
             default:
                 state <= 3'b000;
                 
@@ -93,7 +95,7 @@ module sum_fsm(
     begin
         case(state)
             3'b000: r_o <= 0;
-            3'b110: r_o <= 1;
+            3'b111: r_o <= 1;
         endcase
     end
     assign res = res_reg;

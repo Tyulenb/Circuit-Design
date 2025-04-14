@@ -89,6 +89,7 @@ begin
     
     if(r_o)
     begin
+        $display(sequence);
         if(err==0)
         begin
             sequence[num_of_elem_in] <= data_out;

@@ -162,15 +162,16 @@ module fsm(
                             state <= 4'b0110;
                         end
                     end
-                    
-                    if(incr_flag)
-                    begin
-                        incr_i = 1;
-                        incr_flag = 0;
-                    end
                     else
-                        incr_i = 0;
-                        
+                    begin
+                        if(incr_flag)
+                        begin
+                            incr_i = 1;
+                            incr_flag = 0;
+                        end
+                        else
+                            incr_i = 0;
+                    end    
                 end
                 4'b0110: //power of 2
                 begin
