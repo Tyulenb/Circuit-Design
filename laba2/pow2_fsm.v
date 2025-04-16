@@ -44,6 +44,7 @@ module pow2_fsm(
             mant <= 0;
             mant_res <= 0;
             over <= 0;
+            res_reg <= 0;
             state <= 3'b001;
         end
         
@@ -68,7 +69,7 @@ module pow2_fsm(
         3'b100:
         begin
             res_reg = {1'b0, exp[7:0], mant_res};
-            over = x[30] ? x > res_reg : x < res_reg;
+            over = exp_in[7] ? {exp_in, mant_in} > res_reg[30:0] : {exp_in, mant_in} < res_reg[30:23];
             state <= 3'b101;
         end
         3'b101:
@@ -83,9 +84,9 @@ module pow2_fsm(
     always@(posedge clk)
     begin
         if(state == 3'b101)
-            r_o = 1;
+            r_o <= 1;
         else
-            r_o = 0;
+            r_o <= 0;
     end
     
     assign res = res_reg;

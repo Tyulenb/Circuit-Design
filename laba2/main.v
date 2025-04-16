@@ -64,7 +64,8 @@ end
 
 wire r_o;
 wire [31:0] data_out;
-wire err;
+wire [1:0] err;
+wire [3:0] state_out;
 fsm FSM(
     .dataIn(data_in),
     .R_I(btn_in_out_enable),
@@ -72,7 +73,8 @@ fsm FSM(
     .clk(clk),
     .r_o(r_o),
     .err(err),
-    .dataOut(data_out)
+    .dataOut(data_out),
+    .state_out(state_out)
 );
 
 
@@ -80,7 +82,7 @@ always@(posedge clk)
 begin
     if(btn_nxt_out_enable)
     begin
-        //$display(sequence);
+        $display(sequence);
         if(sequence[num_of_elem_out] == 0)
             num_of_elem_out <= 0;
         else
@@ -102,11 +104,15 @@ begin
         end
     end
     
-    if(btn_rst_out_enable || btn_in_out_enable)
+    if(btn_rst_out_enable)
     begin
         err_out <= 0;
         num_of_elem_in <= 0;
         num_of_elem_out <= 0;
+        for (iter = 0; iter <= 9; iter = iter+1)
+        begin
+            sequence[iter] = 0;
+        end
     end
     
 end
@@ -126,5 +132,16 @@ SevenSegmentLED seg(
     .AN(AN),
     .SEG(SEG)
 ); 
+
+vio_0 vio(
+    .clk(clk),
+    .probe_in0(data_in),
+    .probe_in1(btn_in_out_enable),
+    .probe_in2(btn_rst_out_enable),
+    .probe_in3(r_o),
+    .probe_in4(err),
+    .probe_in5(data_out),
+    .probe_in6(state_out)
+);
 
 endmodule

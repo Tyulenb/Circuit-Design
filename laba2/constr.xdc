@@ -62,5 +62,5 @@ set_property -dict {IOSTANDARD LVCMOS33 PACKAGE_PIN P15} [get_ports {SEG[4]}]
 set_property -dict {IOSTANDARD LVCMOS33 PACKAGE_PIN T11} [get_ports {SEG[5]}]
 set_property -dict {IOSTANDARD LVCMOS33 PACKAGE_PIN L18} [get_ports {SEG[6]}]
 
-set_property -dict {PACKAGE_PIN H17   IOSTANDARD LVCMOS33} [get_ports {err[0]}];  
-set_property -dict {PACKAGE_PIN K15   IOSTANDARD LVCMOS33} [get_ports {err[1]}];
+set_property -dict {IOSTANDARD LVCMOS33 PACKAGE_PIN H17} [get_ports {err_out[0]}];  
+set_property -dict {IOSTANDARD LVCMOS33 PACKAGE_PIN K15} [get_ports {err_out[1]}];

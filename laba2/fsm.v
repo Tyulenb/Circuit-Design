@@ -7,8 +7,10 @@ module fsm(
     input clk,
     output reg r_o,
     output reg [1:0] err,
-    output [31:0] dataOut
+    output [31:0] dataOut,
+    output [3:0] state_out
     );
+    
     
     //main
     reg [3:0] state;
@@ -55,7 +57,7 @@ module fsm(
         state = 0;
         reg_a = 0;
         reg_b = 0;
-        counter = 32'b00111111100000000000000000000000;
+        counter = 0;
         r_o = 0;
         step1 = 0;
         step2 = 0;
@@ -101,7 +103,7 @@ module fsm(
                     if (reg_a == 0)
                     begin 
                         err <= 2'b11;
-                        state <= 4'b0000;
+                        state <= 4'b1110;
                     end
                     else
                         state <= 4'b0011;    
@@ -136,11 +138,11 @@ module fsm(
                     begin
                         if(fr_flag)
                         begin
-                            fr_i = 1;
-                            fr_flag = 0;
+                            fr_i <= 1;
+                            fr_flag <= 0;
                         end
                         else
-                            fr_i = 0;
+                            fr_i <= 0;
                    end
                 end
                 4'b1101:
@@ -155,6 +157,7 @@ module fsm(
                         if (counter[30:23]>reg_b[30:23] ? 1 : (counter[30:23]==reg_b[30:23] ? counter[22:0]>=reg_b[22:0] : 0))
                         begin
                             state <= 4'b0000;
+                            incr_flag <= 1;
                         end
                         else
                         begin
@@ -166,11 +169,11 @@ module fsm(
                     begin
                         if(incr_flag)
                         begin
-                            incr_i = 1;
-                            incr_flag = 0;
+                            incr_i <= 1;
+                            incr_flag <= 0;
                         end
                         else
-                            incr_i = 0;
+                            incr_i <= 0;
                     end    
                 end
                 4'b0110: //power of 2
@@ -183,6 +186,7 @@ module fsm(
                             err <= 2'b01;
                             reg_a <= 0;
                             state <= 4'b1110;
+                            pw_flag <= 1;
                         end
                         else
                         begin
@@ -195,11 +199,11 @@ module fsm(
                     begin
                         if(pw_flag)
                         begin
-                            pw_ri = 1;
-                            pw_flag = 0;
+                            pw_ri <= 1;
+                            pw_flag <= 0;
                         end
                         else
-                            pw_ri = 0;
+                            pw_ri <= 0;
                     end
                         
                 end
@@ -215,11 +219,11 @@ module fsm(
                     begin
                         if(dl_flag)
                         begin
-                            dl_ri = 1;
-                            dl_flag = 0;
+                            dl_ri <= 1;
+                            dl_flag <= 0;
                         end
                         else
-                            dl_ri = 0;
+                            dl_ri <= 0;
                    end
                 end
                 4'b1010: //step3
@@ -245,7 +249,10 @@ module fsm(
                 end
                 4'b1110: //r_o condition
                 begin
-                    state <= 4'b0101;
+                    if(err==0)
+                        state <= 4'b0101;
+                    else
+                        state <= 4'b0000;
                 end
             endcase 
         end
@@ -262,6 +269,8 @@ module fsm(
     end
     
     assign dataOut = reg_a;
+    assign state_out = state;
+    
     
     checkfr_fsm FR(
         .clk(clk),

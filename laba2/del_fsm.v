@@ -6,7 +6,6 @@ module del_fsm(
     output [31:0] res,
     output reg r_o
     );
-    
 
     
     reg [24:0] divisible;
@@ -177,7 +176,7 @@ module del_fsm(
             end
             5'b10000:
             begin
-                res_reg <= {divs_fb^divd_fb, exp[7:0]-23+carry, mant_res[22:0]};
+                res_reg <= {divs_fb^divd_fb, exp[7:0]-5'b10111+carry, mant_res[22:0]};
                 state <= 5'b10001;
             end
             5'b10001:
