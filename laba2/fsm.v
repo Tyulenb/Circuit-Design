@@ -91,6 +91,16 @@ module fsm(
                     counter <= 0;
                     err <= 0;
                     state <= 4'b0001;
+                    fr_i <= 0;
+                    fr_flag <= 1;
+                    incr_i <= 0;
+                    incr_flag <= 1;
+                    sm_ri <= 0;
+                    sm_flag <= 1;
+                    dl_ri <= 0;
+                    dl_flag <= 1;
+                    pw_ri <= 0;
+                    pw_flag <= 1;
                 end
                 4'b0001: if(R_I)
                 begin
