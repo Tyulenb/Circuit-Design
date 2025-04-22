@@ -1,6 +1,5 @@
 `timescale 1ns / 1ps
 
-
 module checkfr_fsm(
     input [31:0] num_in,
     input clk, r_i,
@@ -16,7 +15,7 @@ module checkfr_fsm(
     initial
     begin
         state = 0;
-        lst = 0;
+        lst = 5'b11111;
         iter = 0;
         res_rg = 0;
         r_o = 0;
@@ -27,7 +26,7 @@ module checkfr_fsm(
         case(state)
         2'b00: if(r_i)
             begin
-                lst <= 0;
+                lst <= 5'b11111;
                 iter <= 0;
                 res_rg <= 0;
                 num <= num_in;
@@ -37,7 +36,7 @@ module checkfr_fsm(
             begin
                 for(iter = 0; iter <= 22; iter = iter + 1)
                 begin
-                    if (lst == 0 && num[iter])
+                    if (lst == 5'b11111 && num[iter])
                         lst = iter;
                     else
                         lst = lst;
@@ -48,7 +47,7 @@ module checkfr_fsm(
             begin
                 if (num[30:23] > 7'b1111111)
                 begin
-                   res_rg = (22-(num[30:23]-7'b1111111)) >= lst && lst!=0;
+                   res_rg = num[31] || ((22-(num[30:23]-7'b1111111)) >= lst) && (lst!=5'b11111);
                 end
                 else
                 begin
