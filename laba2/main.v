@@ -2,14 +2,19 @@
 
 module main(
     input clk,
-    input [15:0] data_in,
-    input btn_in,
-    input btn_nxt,
-    input btn_rst,
+    input [15:0] data_in, //SW
+    input btn_in, //btn_c
+    input btn_nxt, //btn_l
+    input btn_rst, //btn_r
     output reg [1:0] err_out,
     output [7:0] AN,
     output [6:0] SEG
     );
+    
+//wire [15:0] data_in; //SW
+//wire btn_in; // btn_c
+//wire btn_nxt; //btn_l
+//wire btn_rst; //btn_r
     
 reg CLOCK_ENABLE = 0;
 
@@ -133,15 +138,19 @@ SevenSegmentLED seg(
     .SEG(SEG)
 ); 
 
-vio_0 vio(
-    .clk(clk),
-    .probe_in0(data_in),
-    .probe_in1(btn_in_out_enable),
-    .probe_in2(btn_rst_out_enable),
-    .probe_in3(r_o),
-    .probe_in4(err),
-    .probe_in5(data_out),
-    .probe_in6(state_out)
-);
+//vio_0 vio(
+//    .clk(clk),
+//    .probe_in0(btn_nxt_out_enable),
+//    .probe_in1(btn_in_out_enable),
+//    .probe_in2(btn_rst_out_enable),
+//    .probe_in3(r_o),
+//    .probe_in4(err),
+//    .probe_in5(sequence[num_of_elem_out]),
+//    .probe_in6(state_out),
+//    .probe_out0(data_in),
+//    .probe_out1(btn_in),
+//    .probe_out2(btn_nxt),
+//    .probe_out3(btn_rst)
+//);
 
 endmodule
